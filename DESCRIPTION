@@ -1,14 +1,24 @@
 Package: unpackr
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Title: Python 3-Style Unpacking for Variable Assignment in R
+Version: 0.0.9000
+Authors@R: c(
+    person("Zachary", "Burchill", email = "zach.burchill.code@gmail.com", 
+                                  role = c("aut", "cre", "cph"))
+  )
+Maintainer: Zachary Burchill <zach.burchill.code@gmail.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Imports: rlang (>= 0.4.6)
 Suggests: 
     testthat (>= 2.1.0)
 RoxygenNote: 6.1.1
+Collate: 
+    'assigning.R'
+    'operators.R'
+    'rhs-container.R'
+    'call-parsing.R'
+    'assignment-operators.R'

@@ -1,90 +1,92 @@
-find_and_assign <- function(expr, check_envir, make_envir = check_envir) {
-  base::`<-`(`<-`, base::`<-`)
-  has_my_infix <- FALSE
-  # Checks to see if unpackr's infixes are being used in left-most
-  #   branch of the left side of the expresssion
-  while (is.call(expr))  {
-    if (is_my_infix(expr[[1]])) has_my_infix <- TRUE
-    prev_call <- expr
-    # If it does have unpackr infix, there should only be other infixes
-    if (has_my_infix && !is_my_infix(prev_call[[1]]))
-      stop("`%,%` can only separate bare variable names ",
-           "(not `", deparse(prev_call), "`)", call. = FALSE)
-    expr <- expr[[2]]
-  }
-  if (!has_my_infix) return()
-  if (!rlang::is_symbol(expr))
-    stop("`%,%` can only separate bare variable names ",
-         "(not ", deparse(expr), ")", call. = FALSE)
+#' @include call-parsing.R assigning.R rhs-container.R operators.R
+NULL
 
-  var <- rlang::as_string(expr)
-  if (!exists(var, envir = check_envir))
-    assign(var, NULL, envir = make_envir)
-}
-# changes the calls of the errors to make them more readable
-clean_do <- function(f, l, e, call) {
-  base::`<-`(`=`, base::`=`)
-  tryCatch(
-    do.call(f, l, envir = e, quote = FALSE),
-    error = function(err) {
-      err$call = call
-      stop(err)
-    })
-}
-# check_arg_num
-
-is_my_infix <- function(expr) {
-  identical(expr, quote(`%,%`)) || identical(expr, quote(`%,*%`))
-}
-
-#' @export
-`<-` <- function(x, value) {
-  if (nargs() != 2) stop("")
-  print(missing(value))
-  print(nargs())
-  print(match.call())
-  find_and_assign(match.call(), parent.frame())
-  clean_do(f = base::`<-`, l = list(x = substitute(x), value = substitute(value)),
-           e = parent.frame(), call = match.call())
-}
-#' @export
-`=` <- function(x, value) {
-  find_and_assign(match.call(), parent.frame())
-  clean_do(f = base::`=`, l = list(x = substitute(x), value = substitute(value)),
-           e = parent.frame(), call = match.call())
-}
-#' @export
-`<<-` <- function(...) {
-  print(match.call())
-  print(nargs())
-  print("AAA")
-  find_and_assign(match.call(), parent.env(parent.frame()),
-                  base::globalenv())
-  eval(base::`<<-`(...))
-  # clean_do(f = base::`<<-`, l = list(x = substitute(x), value = substitute(value)),
-  #          e = parent.frame(), call = match.call())
-}
-
-
-
-# `<<-` <- function(...) {
+# # Currently unused
+# warning_env <- new.env(parent = emptyenv())
+# has_warning <- function(name) {
+#   exists(name, envir = warning_env, inherits = FALSE)
+# }
+# add_warning <- function(name) {
+#   assign(name, 1L, envir = warning_env)
+# }
+# are_infixes_visible <- function(starting_env) {
 #   base::`<-`(`<-`, base::`<-`)
-#   m <- match.call()
-#   if (nargs() != 2)
-#     stop('incorrect number of arguments to "',
-#          deparse(m[[1]]), '"', call. = FALSE)
-#   expr <- substitute(base::`<<-`(x, v),
-#                     list(x = m[[2]], v = m[[3]]))
-#   print(expr)
-#   find_and_assign(m, parent.env(parent.frame()),
-#                   base::globalenv())
-#   eval.parent(expr)
-#   # clean_do(f = base::`<<-`, l = list(x = substitute(x), value = substitute(value)),
-#   #          e = parent.frame(), call = match.call())
+#   env <- find_loc("%,%", starting_env, FALSE, writeable = FALSE)
+#   # print(env)
+#   if (isFALSE(env) && !has_warning("noinfixes")) {
+#     warning(
+#       "An assignment operator exported from unpackr ",
+#       "(`<-`, `=`, or `<<-`) is being used, but ",
+#       "unpackr's infixes(`%,%`/`%,*%`) aren't loaded. ",
+#       "The exported functions in unpackr are not meant ",
+#       "to be used individually.\nThis warning is displayed",
+#       " once per session.",
+#       immediate. = TRUE,
+#       call. = FALSE
+#     )
+#     add_warning("noinfixes")
+#     return(FALSE)
+#   } else if (rlang::env_name(env) == "package:unpackr") {
+#     return(TRUE)
+#   } else if (is.environment(env)) {
+#     if (!has_warning("hiddeninfixes")) {
+#       warning(
+#         "An assignment operator exported from unpackr ",
+#         "(`<-`, `=`, or `<<-`) is being used, but ",
+#         "unpackr's separators (`%,%` or `%,*%`) are currently masked ",
+#         "by function(s) in the ", rlang::env_label(env), " environment.",
+#         " While these are masked, unpackr's assignment ",
+#         "operators will behave similarly to their base counterparts.",
+#         "\nThis warning is displayed once per session.",
+#         immediate. = TRUE,
+#         call. = FALSE
+#       )
+#       add_warning("hiddeninfixes")
+#       return(FALSE)
+#     }
+#   } else {
+#     return(FALSE)
+#   }
 # }
 
 
-
-
-
-
+#' @export
+`=` <- function(...) {
+  base::`<-`(`<-`, base::`<-`)
+  m <- match.call()
+  lofsyms <- search_tree(m[[2]])
+  if (isFALSE(lofsyms)) {
+    newm <- `[[<-`(m, 1, str2lang("base::`=`"))
+    tryCatch(invisible(eval.parent(newm)),
+             error = function(err) stop(`$<-`(err, call, m)))
+  } else {
+    make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame())
+  }
+}
+#' @export
+`<<-` <- function(...) {
+  base::`<-`(`<-`, base::`<-`)
+  m <- match.call()
+  lofsyms <- search_tree(m[[2]])
+  if (isFALSE(lofsyms)) {
+    newm <- `[[<-`(m, 1, str2lang("base::`<<-`"))
+    tryCatch(invisible(eval.parent(newm)),
+             error = function(err) stop(`$<-`(err, call, m)))
+  } else {
+    make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame(),
+                     uber_assign = TRUE)
+  }
+}
+#' @export
+`<-` <- function(...) {
+  base::`<-`(`<-`, base::`<-`)
+  m <- match.call()
+  lofsyms <- search_tree(m[[2]])
+  if (isFALSE(lofsyms)) {
+    newm <- `[[<-`(m, 1, str2lang("base::`<-`"))
+    tryCatch(invisible(eval.parent(newm)),
+             error = function(err) stop(`$<-`(err, call, m)))
+  } else {
+    make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame())
+  }
+}
