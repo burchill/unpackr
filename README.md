@@ -34,7 +34,7 @@ With unpackr you can recreate the first Python example like so:
 
 ```r
 library(unpackr)
-a %,% b %,% c <- "A" %,% TRUE %,% c(1, 2, 3)
+a %,% b %,% c <- "A" %,% TRUE %,% 1:3
 
 a
 #>[1] "A"
@@ -47,7 +47,7 @@ c
 And the second one like:
 
 ```r
-a %,*% b %,% c = c(1,2,3,4,5,6,7,8,9]
+a %,*% b %,% c = 1:9
 
 a
 #>[1] 1
