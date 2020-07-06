@@ -51,7 +51,7 @@ rhs_tail <- function(x, n) {
 `print.rhs-container` <- function(..., warn = TRUE) {
   if (warn)
     warning(
-      "Value on the righthand side of an ",
+      "Values on the righthand side of an ",
       "assignment separated by `%,% produce an ",
       "'rhs-container' object internally. If you are ",
       "seeing this, it generally means something ",
