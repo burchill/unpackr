@@ -54,7 +54,6 @@ NULL
 `=` <- function(...) {
   base::`<-`(`<-`, base::`<-`)
   m <- match.call()
-  force(m)
   lofsyms <- search_tree(m[[2]])
   if (isFALSE(lofsyms)) {
     newm <- `[[<-`(m, 1, str2lang("base::`=`"))
@@ -68,7 +67,6 @@ NULL
 `<<-` <- function(...) {
   base::`<-`(`<-`, base::`<-`)
   m <- match.call()
-  force(m)
   lofsyms <- search_tree(m[[2]])
   if (isFALSE(lofsyms)) {
     newm <- `[[<-`(m, 1, str2lang("base::`<<-`"))
@@ -83,7 +81,6 @@ NULL
 `<-` <- function(...) {
   base::`<-`(`<-`, base::`<-`)
   m <- match.call()
-  force(m)
   lofsyms <- search_tree(m[[2]])
   if (isFALSE(lofsyms)) {
     newm <- `[[<-`(m, 1, str2lang("base::`<-`"))
