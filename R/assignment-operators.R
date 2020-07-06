@@ -1,3 +1,18 @@
+
+# x %,% y <<- ... fundamentally does not work
+#  that is because:
+#    names(x)[3] <<- "Three"
+#  is evaluated as:
+#    `*tmp*` <- get(x,envir=parent.env(), inherits=TRUE)
+#    x <<- "names<-"(`*tmp*`, value="[<-"(names(`*tmp*`), 3, value="Three"))
+#    rm(`*tmp*`)
+
+# TODO: make assignment operators move through call tree, adding lhs symbols and info via signals, as well as checking to see the lhs is either symbols+infixes or free of infixes
+#  after getting all the symbols,
+#  if the assignment operator is `<<-`, move through parent environments, looking for variable name, getting the environment it is at (or the global environment)
+#  evaluate the value and then parcel it out in the right environments
+# This means I would probably get rid of `%,%<-`, or at least just make them explicitly throw errors, since they shouldn't be REALLY called
+
 find_and_assign <- function(expr, check_envir, make_envir = check_envir) {
   base::`<-`(`<-`, base::`<-`)
   has_my_infix <- FALSE
@@ -22,16 +37,12 @@ find_and_assign <- function(expr, check_envir, make_envir = check_envir) {
     assign(var, NULL, envir = make_envir)
 }
 # changes the calls of the errors to make them more readable
-clean_do <- function(f, l, e, call) {
-  base::`<-`(`=`, base::`=`)
+clean_do <- function(expr, call) {
   tryCatch(
-    do.call(f, l, envir = e, quote = FALSE),
-    error = function(err) {
-      err$call = call
-      stop(err)
-    })
+    eval.parent(expr),
+    error = function(err) stop(`$<-`(err, call, call))
+  )
 }
-# check_arg_num
 
 is_my_infix <- function(expr) {
   identical(expr, quote(`%,%`)) || identical(expr, quote(`%,*%`))
@@ -53,35 +64,65 @@ is_my_infix <- function(expr) {
   clean_do(f = base::`=`, l = list(x = substitute(x), value = substitute(value)),
            e = parent.frame(), call = match.call())
 }
-#' @export
-`<<-` <- function(...) {
-  print(match.call())
-  print(nargs())
-  print("AAA")
-  find_and_assign(match.call(), parent.env(parent.frame()),
-                  base::globalenv())
-  eval(base::`<<-`(...))
-  # clean_do(f = base::`<<-`, l = list(x = substitute(x), value = substitute(value)),
-  #          e = parent.frame(), call = match.call())
-}
+
+
+
+# TODO: make it so that it doesn't error check, but if there IS an error,
+#   and you DID make a new thing you normally wouldn't have,
+#   deassign it before raising the error
+# Something like:
+
+# `<-` <- function(...) {
+#   base::`<-`(`<-`, base::`<-`)
+#   m <- match.call()
+#   added <- find_and_assign(m, parent.env(parent.frame()))
+#   tryCatch(
+#     invisible(eval.parent(`[[<-`(m, 1, str2lang("base::`<-`")))),
+#     error = function(err) {
+#       if (!isFALSE(added)) rm(list = added$varname, envir = added$envir)
+#       stop(`$<-`(err, call, m))
+#     }
+#   )
+# }
+
+
+
 
 
 
 # `<<-` <- function(...) {
-#   base::`<-`(`<-`, base::`<-`)
-#   m <- match.call()
 #   if (nargs() != 2)
 #     stop('incorrect number of arguments to "',
-#          deparse(m[[1]]), '"', call. = FALSE)
-#   expr <- substitute(base::`<<-`(x, v),
-#                     list(x = m[[2]], v = m[[3]]))
-#   print(expr)
-#   find_and_assign(m, parent.env(parent.frame()),
+#          deparse(match.call()[[1]]), '"', call. = FALSE)
+#   find_and_assign(match.call(), parent.env(parent.frame()),
 #                   base::globalenv())
-#   eval.parent(expr)
-#   # clean_do(f = base::`<<-`, l = list(x = substitute(x), value = substitute(value)),
-#   #          e = parent.frame(), call = match.call())
+#   invisible(
+#     clean_do(eval.parent(`[[<-`(match.call(), 1, str2lang("base::`<-`"))),
+#              match.call())
+#   )
 # }
+
+
+#
+# `<<-` <- function(...) {
+#   if (nargs() != 2)
+#     stop('incorrect number of arguments to "',
+#          deparse(match.call()[[1]]), '"', call. = FALSE)
+#   find_and_assign(match.call(), parent.env(parent.frame()),
+#                   base::globalenv())
+#   invisible(
+#     clean_do(eval.parent(`[[<-`(match.call(), 1, str2lang("base::`<-`"))),
+#              match.call())
+#   )
+# }
+
+
+
+
+
+
+
+
 
 
 
