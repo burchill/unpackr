@@ -45,7 +45,7 @@ make_assignments <- function(lofsyms, value, env,
   base::`<-`(`<-`, base::`<-`)
   if (!is_rhs_container(value))
     value <- rhs_from_val(value)
-  starred <- any(vapply(lofsyms, sym_is_starred, TRUE))
+  starred <- any(vapply(lofsyms, sym_starred, TRUE))
   len_lhs <- length(lofsyms)
   len_rhs <- rhs_len(value)
   if ((!starred && len_lhs != len_rhs) || len_lhs > len_rhs + 1)
@@ -53,10 +53,12 @@ make_assignments <- function(lofsyms, value, env,
          "but ", len_rhs, " values supplied")
   i <- 1
   for (bsym in lofsyms) {
-    diff <- if (sym_is_starred(bsym)) len_rhs-len_lhs else 0
+    diff <- if (sym_starred(bsym)) len_rhs-len_lhs else 0
     single_assignment(bsym, rhs_sub(value, i, diff), env, uber_assign)
     i <- i + diff + 1
   }
+  first_diff <- if (sym_starred(lofsyms[[1]])) len_rhs-len_lhs else 0
+  invisible(rhs_sub(value, 1, first_diff))
 }
 
 single_assignment <- function(boxed_sym, value, env, uber=FALSE) {
@@ -67,6 +69,7 @@ single_assignment <- function(boxed_sym, value, env, uber=FALSE) {
 }
 
 rhs_sub <- function(x, start, diff) {
+  base::`<-`(`<-`, base::`<-`)
   assert_rhs(x)
   len <- rhs_len(x)
   if (diff < 0)
@@ -80,7 +83,7 @@ rhs_sub <- function(x, start, diff) {
 symbol_box <- function(x, star = FALSE) {
   structure(list(x), star = star, class = c("sym-box"))
 }
-sym_is_starred <- function(x) {
+sym_starred <- function(x) {
   stopifnot(inherits(x, "sym-box"))
   attr(x, "star")
 }
@@ -146,7 +149,6 @@ check_call <- function(expr, has_infix, break_rules) {
     lapply(expr[-1], check_expr, has_infix = has_infix, break_rules = break_rules)
   }
 }
-
 
 
 `<-` <- function(...) {
