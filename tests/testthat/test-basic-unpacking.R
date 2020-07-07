@@ -44,14 +44,7 @@ test_that("RHS %,% can handle subcalls and variables", {
     list(A, B))
 })
 
-expect_not_exist <- function(...) {
-  qs <- rlang::enquos(...)
-  for (q in qs) {
-    expect_false(
-      exists(rlang::as_string(rlang::quo_squash(q)),
-             envir = rlang::quo_get_env(q)))
-  }
-}
+
 
 test_that("Basic LHS %,% with <-", {
   local({
@@ -70,10 +63,91 @@ test_that("Basic LHS %,% with <-", {
     expect_equal(list(AA, CC), list(1, 2))
   })
 
+  expect_not_exist(AA, BB, CC)
+})
+
+test_that("Basic LHS %,% with =", {
+  local({
+    AA %,% BB %,% CC = 1:3
+    expect_equal(list(AA, BB, CC), list(1, 2, 3))
+  })
+
+  local({
+    AA = BB = CC = "X"
+    AA %,% BB %,% CC = 1:3
+    expect_equal(list(AA, BB, CC), list(1, 2, 3))
+  })
+
+  local({
+    AA %,% CC = list(1, 2)
+    expect_equal(list(AA, CC), list(1, 2))
+  })
 
   expect_not_exist(AA, BB, CC)
+})
 
 
+test_that("Basic LHS %,*% with <-", {
+  local({
+    AA %,% BB %,*% CC <- 1:3
+    expect_equal(list(AA, BB, CC), list(1, 2, 3))
+  })
+
+  local({
+    AA %,*% BB <- 1:2
+    expect_equal(list(AA, BB), list(1, 2))
+  })
+
+  local({
+    AA <- BB <- CC <- "X"
+    AA %,% BB %,% CC <- 1:3
+    expect_equal(list(AA, BB, CC), list(1, 2, 3))
+  })
+
+  local({
+    AA %,*% CC <- list(1, 2)
+    expect_equal(list(AA, CC), list(1, 2))
+  })
+
+  expect_not_exist(AA, BB, CC)
+})
+
+test_that("%,*% makes list(1) -> 1 for first variable", {
+  local({
+    AA %,*% BB <- list(1)
+    expect_equal(list(AA, BB), list(1, NULL))
+  })
+  local({
+    AA %,*% BB = list(1)
+    expect_equal(list(AA, BB), list(1, NULL))
+  })
+  AA <- BB <- "X"
+  local({
+    AA %,*% BB <<- list(1)
+    expect_equal(list(AA, BB), list(1, NULL))
+  })
+  rm(AA, BB)
+})
+
+test_that("%,*% with nulls", {
+  local({
+    AA %,*% BB <- 1
+    expect_equal(list(AA, BB), list(1, NULL))
+  })
+  local({
+    AA %,*% BB <- list(c(1,2,3))
+    expect_equal(list(AA, BB), list(c(1,2,3), NULL))
+  })
+  local({
+    AA %,% BB %,*% CC <- 1:2
+    expect_equal(list(AA, BB, CC), list(1, 2, NULL))
+  })
+  local({
+    AA %,*% BB %,% CC <- 1:2
+    expect_equal(list(AA, BB, CC), list(1, NULL, 2))
+  })
+
+  expect_not_exist(AA, BB, CC)
 })
 
 

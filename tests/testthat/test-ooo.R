@@ -6,28 +6,7 @@ test_that("Can't explicitly call assignment operators", {
 })
 
 
-same_errors <- function(expr, fn, og_fn) {
-  assign(deparse(substitute(fn)), fn)
-  q <- rlang::enexpr(expr)
-  err1 <- rlang::eval_tidy(expect_error(!!q))
-  assign(deparse(substitute(fn)), og_fn)
-  err2 <- rlang::eval_tidy(expect_error(!!q))
-  expect_equal(err1, err2)
-}
-same_results <- function(expr, fn, og_fn) {
-  assign(deparse(substitute(fn)), fn)
-  q <- rlang::enexpr(expr)
-  res1 <- rlang::eval_tidy(expect_success(!!q))
-  assign(deparse(substitute(fn)), og_fn)
-  res2 <- rlang::eval_tidy(expect_success(!!q))
-  expect_equal(res1, res2)
-}
-global_sibling_env <- function() {
-  rlang::child_env(
-    rlang::env_parent(
-      globalenv()
-    ))
-}
+
 
 
 
