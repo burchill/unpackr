@@ -19,7 +19,7 @@ RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 Collate: 
     'assigning.R'
-    'operators.R'
-    'rhs-container.R'
+    'variable-separators.R'
+    'value-separator.R'
     'call-parsing.R'
     'assignment-operators.R'
