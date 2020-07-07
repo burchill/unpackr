@@ -29,7 +29,7 @@ rhs_sub <- function(x, start, diff) {
   assert_rhs(x)
   len <- rhs_len(x)
   if (diff < 0)
-    getOption("default_empty_val", NULL)
+    getOption("unpackr_empty_val", NULL)
   else if (diff == 0)
     x[[1]][[start]]
   else
