@@ -2,7 +2,7 @@
 #'
 #' @description
 #'
-#' `unpackr`'s infix operators `%,%` and \code{\link{\%,*\%}} are meant to mimic the commas in Python 3's variable unpacking, which lets the user assign multiple values to multiple variables with a single assignment call.  Take an example of the Python code below, which assigns `1`, `2`, and `3` to `a`, `b`, and `c`, respectively:
+#' On the lefthand side of an assignment, `unpackr`'s infix operators `%,%` and \code{\link{\%,*\%}} are meant to mimic the commas in Python 3's variable unpacking, which lets the user assign multiple values to multiple variables with a single assignment call.  Take an example of the Python code below, which assigns `1`, `2`, and `3` to `a`, `b`, and `c`, respectively:
 #'
 #' \preformatted{
 #' a, b, c = [1, 2, 3]
@@ -14,33 +14,17 @@
 #' a \%,\% b \%,\% c <- c(1, 2, 3)
 #' }
 #'
-#' When used on the lefthand side of an assignment operator (\code{\link{<-}}, \code{\link{=}}, or \code{\link{<<-}}), `%,%` must separate unquoted variable names--complex calls such as `names(x) %,% y <- ...` will throw errors. When used on the righthand side of an assignment, `%,%` has [a different function][rhs-separator].
+#' When used on the lefthand side of an assignment operator (\code{\link{<-}}, \code{\link{=}}, or \code{\link{<<-}}), `%,%` must separate unquoted variable names---complex calls such as: `names(x) %,% y <- ...` will throw errors. When used on the righthand side of an assignment, `%,%` has [a different meaning and function][rhs-separator].
 #'
 #' @details
 #'
-#' `unpackr`'s infix separators will attempt to separate any LHS assignment value that has length by the first indexing level. E.g., a data frame's first indexing level (i.e., `dat[[i]]`) represents its columns, so `a %,% b <- dat` will attempt to assign the first and second columns to `a` and `b`, respectively.
+#' `unpackr`'s infix separators will attempt to separate any RHS assignment value by the first indexing level. E.g., a data frame's first indexing level (i.e., `dat[[i]]`) represents its columns, so `a %,% b <- dat` will attempt to assign the first and second columns to `a` and `b`, respectively.
 #'
-#' @seealso \code{\link{\%,*\%}}; [%,% (righthand side)][rhs-separator] for how `%,%` behaves on the righthand side of assignments.
+#' @seealso \code{\link{\%,*\%}} for the starred variable separator; and [`%,%` (righthand side)][rhs-separator] for how `%,%` behaves on the righthand side of assignments.
 #' @param lhs An unquoted variable name or another infix-separated expression (for chaining separators)
 #' @param rhs An unquoted variable name
 #' @usage lhs \%,\% rhs <- ...
-#' @export
-`%,%` <- function(lhs, rhs) {
-  if (deparse(substitute(lhs)) != "*tmp*") {
-    move_over(lhs, rhs)
-  } else {
-    inexplic_err(match.call())
-  }
-}
-
-#' HUH
-#'
-#' what
-#'
-#' @usage ... <- lhs \%,\% rhs
-#' @rdname righthand
-#' @name %,% (righthand side)
-#' @aliases rhs-separator
+#' @name %,%
 NULL
 
 #' 'Starred' variable separator
@@ -83,23 +67,34 @@ NULL
 #' 'Guide rail' exports
 #'
 #' `packr` exports `%,%<-` and `%,*%<-` not because it uses these functions, but because it _never_ does. Due to the way `unpackr` evaluates lefthand sides of assignments, it never actually evaluates either of these functions, and if for some reason this is happening, something has gone wrong. These functions are exported to serve as 'guide rails' and alert the user that there is a problem.
-#' @param `lhs,rhs,value` Arguments not intended to be used
+#' @param lhs Argument not intended to be used
+#' @param rhs Argument not intended to be used
+#' @param value Argument not intended to be used
 #' @rdname guiderails
 #' @export
 `%,%<-` <- function(lhs, rhs, value) {
   stop("`%,%<-` is being evaluated literally, which ",
        "should never happen. ", assignment_suggestion(TRUE), ".")
 }
+
+
 #' @rdname guiderails
 #' @export
 `%,*%<-` <- function(lhs, rhs, value) {
   stop("`%,*%<-` is being evaluated literally, which ",
        "should never happen. ", assignment_suggestion(TRUE), ".")
 }
+
+
+
 inexplic_err <- function(call) {
-  stop(
-    "`", deparse(call[[1]]), "` should not be evaluated ",
-    "in this context (literally, on the lefthand side ",
-    "of assignment). ", assignment_suggestion(TRUE), ".",
-    call. = FALSE)
+  stop("`", deparse(call[[1]]), "` should not be evaluated ",
+       "in this context (literally, on the lefthand side ",
+       "of assignment). ", assignment_suggestion(TRUE), ".",
+       call. = FALSE)
+}
+assignment_suggestion <- function(capped = FALSE) {
+  paste0(if (capped) "M" else "m", "ake sure ",
+         "assignment is being done via the `<-`, ",
+         "`=`, or `<<-` operators exported from unpackr")
 }

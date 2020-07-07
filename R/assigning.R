@@ -11,12 +11,19 @@ find_loc <- function(varname, start_env, default = globalenv(),
   return(default)
 }
 
+rhs_sub <- function(x, start, diff) {
+  if (diff < 0)
+    getOption("unpackr_empty_val", NULL)
+  else if (diff == 0)
+    x[[start]]
+  else
+    x[start:(start+diff)]
+}
+
 make_assignments <- function(lofsyms, value, env,
                              uber_assign = FALSE) {
   base::`<-`(`<-`, base::`<-`)
-  if (!is_rhs_container(value)) value <- rhs_from_val(value)
   star_lgl <- vapply(lofsyms, sym_starred, TRUE)
-
   # Shouldn't happen, but I'll check anyway
   if (length(star_lgl[is.na(star_lgl)]) > 0) {
     bad_syms <- unique(lapply(lofsyms[is.na(star_lgl)], `[[`, 1))
@@ -30,7 +37,7 @@ make_assignments <- function(lofsyms, value, env,
 
   starred <- any(star_lgl)
   len_lhs <- length(lofsyms)
-  len_rhs <- rhs_len(value)
+  len_rhs <- length(value)
   if ((!starred && len_lhs != len_rhs) || len_lhs > len_rhs + 1)
     stop(len_lhs, " variables receiving assignment, ",
          "but ", len_rhs, " values supplied",
