@@ -1,4 +1,4 @@
-unpackr
+unpackr: Python's unpacking for variable assignment in R
 =======================================================
 
 **Important**: unpackr overwrites some of base R's assignment operators and can significantly slow down some code, depending on the circumstances. If speed is most important to you and you are fine ditching the Python analogy and looks, try the [zeallot](https://github.com/r-lib/zeallot) package.
