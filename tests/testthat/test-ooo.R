@@ -93,7 +93,7 @@ test_that("Subset assignment to undefined variables", {
 })
 
 test_that("Assignment with missing args", {
-  same_errors(`<-`(a), `<-`, base::`<-`)
+  expect_failure(same_errors(`<-`(a), `<-`, base::`<-`))
 })
 
 test_that("Basic assigning to strings", {

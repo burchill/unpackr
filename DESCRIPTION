@@ -16,6 +16,7 @@ Imports: rlang (>= 0.4.6)
 Suggests: 
     testthat (>= 2.1.0)
 RoxygenNote: 6.1.1
+Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 Collate: 
     'assigning.R'
     'operators.R'

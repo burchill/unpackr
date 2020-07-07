@@ -14,6 +14,11 @@
     inexplic_err(match.call())
   }
 }
+
+#' 'Guide rail' exports
+#'
+#' `packr` exports
+#'
 #' @export
 `%,%<-` <- function(lhs, rhs, value) {
   stop("`%,%<-` is being evaluated literally, which ",
