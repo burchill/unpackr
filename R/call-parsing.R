@@ -1,6 +1,6 @@
 search_tree <- function (lhs) {
   assign("res", check_expr(lhs))
-  if (is.na(res)) FALSE
+  if (rlang::is_na(res)) FALSE
   else res
 }
 
