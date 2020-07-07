@@ -50,43 +50,64 @@ NULL
 # }
 
 
+reg_lang <- str2lang("base::`<-`")
+eq_lang <- str2lang("base::`=`")
+uber_lang <- str2lang("base::`<<-`")
+
+#' Variable assignment via unpacking
+#'
+#' @description
+#'
+#' `unpackr` lets users assign unpacked variables with three operators, `<-`, `=`, and `<<-` (importantly, **not** `->` or `->>`). These functions exist in base R as primitives, and `unpackr` masks the base R versions. This masking should not affect the internal functioning of any other packages, but will affect any user-made code that uses these functions, after `unpackr` has been attached.
+#'
+#' All of `unpackr`'s assignment operators will check the lefthand side of the assignment call to see if \code{\link{\%,\%}} or \code{\link{\%,*\%}} are present. If they are not, the assignment functions will behave almost exactly like the base R functions. If they _are_ present, the lefthand side will be checked to see if it has the correct syntax, separated by the `%,%` infix separators, and each variable will be assigned the values independently. See Details for how `<<-` makes assignments.
+#'
+#' @section Caveats (masking `%,%`):
+#'
+#' Although it seems unlikely that another package would also export `%,%` or `%,*%` (and indeed, this function is not exported by any of the top 1000 most popular packages on CRAN), if a package does export one of these functions, masks `unpackr`, _and_ is used in the lefthand side of an assignment, then that function's default behavior will be ignored.  Essentially, on the lefthand side of an assignment, `%,%` and `%,*%` are unmaskable.
+#'
+#' @section Caveats (performance decreases):
+#'
+#' Most of the 'magic' of `unpackr` happens in the assignment operators, and although this code takes very little time to execute, masking the base R primitives can incur a significant slowdown in speed when a user is running hundreds of thousands of assignments in their own code.
+#'
+#' Therefore, it is not recommended that one should use `unpackr` in situations where there is a premium on processing time. `unpackr` is probably more suited for personal projects than for production code.
+#'
+#' @return The leftmost assigned value (invisibly). Although generally inadvisable, this opens the option for chaining assignment operators.
+#' @param x an unquoted variable name
+#' @param value a value to be assigned to `x` (and optionally to the additional variables)
+#' @param \dots additional unquoted variable names, separated by `%,%` or `%,*%`
+#' @rdname assignment
+#' @name assignment-operators
+#' @aliases =
 #' @export
+#' @usage x = value  or  x ... = value
 `=` <- function(...) {
-  base::`<-`(`<-`, base::`<-`)
-  m <- match.call()
-  lofsyms <- search_tree(m[[2]])
-  if (isFALSE(lofsyms)) {
-    newm <- `[[<-`(m, 1, str2lang("base::`=`"))
-    tryCatch(invisible(eval.parent(newm)),
-             error = function(err) stop(`$<-`(err, call, m)))
-  } else {
+  assign("m", match.call())
+  assign("lofsyms", search_tree(m[[2]]))
+  if (isFALSE(lofsyms)) eval.parent(`[[<-`(m, 1, eq_lang))
+  else
     make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame())
-  }
 }
+#' @rdname assignment
 #' @export
+#' @usage  x <<- value  or  x ... <<- value
 `<<-` <- function(...) {
-  base::`<-`(`<-`, base::`<-`)
-  m <- match.call()
-  lofsyms <- search_tree(m[[2]])
-  if (isFALSE(lofsyms)) {
-    newm <- `[[<-`(m, 1, str2lang("base::`<<-`"))
-    tryCatch(invisible(eval.parent(newm)),
-             error = function(err) stop(`$<-`(err, call, m)))
-  } else {
+  assign("m", match.call())
+  assign("lofsyms", search_tree(m[[2]]))
+  if (isFALSE(lofsyms)) eval.parent(`[[<-`(m, 1, uber_lang))
+  else
     make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame(),
                      uber_assign = TRUE)
-  }
 }
+#' @rdname assignment
 #' @export
+#' @usage x <- value  or  x ... <- value
 `<-` <- function(...) {
-  base::`<-`(`<-`, base::`<-`)
-  m <- match.call()
-  lofsyms <- search_tree(m[[2]])
-  if (isFALSE(lofsyms)) {
-    newm <- `[[<-`(m, 1, str2lang("base::`<-`"))
-    tryCatch(invisible(eval.parent(newm)),
-             error = function(err) stop(`$<-`(err, call, m)))
-  } else {
+  assign("m", match.call())
+  assign("lofsyms", search_tree(m[[2]]))
+  if (isFALSE(lofsyms)) eval.parent(`[[<-`(m, 1, reg_lang))
+  else
     make_assignments(lofsyms, eval.parent(m[[3]]), parent.frame())
-  }
 }
+
+

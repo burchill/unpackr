@@ -33,7 +33,8 @@ make_assignments <- function(lofsyms, value, env,
   len_rhs <- rhs_len(value)
   if ((!starred && len_lhs != len_rhs) || len_lhs > len_rhs + 1)
     stop(len_lhs, " variables receiving assignment, ",
-         "but ", len_rhs, " values supplied")
+         "but ", len_rhs, " values supplied",
+         call. = FALSE)
   i <- 1
   for (bsym in lofsyms) {
     diff <- if (sym_starred(bsym)) len_rhs-len_lhs else 0
